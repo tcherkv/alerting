@@ -1,0 +1,13 @@
+{
+  "java.home": "E:\\Projects\\libs\\java-13-openjdk-13.0.2.8-1",
+  "files.exclude": {
+    "**/.classpath": true,
+    "**/.project": true,
+    "**/.settings": true,
+    "**/.factorypath": true
+  },
+  "terminal.integrated.env.windows": {
+    "JAVA_HOME": "E:\\Projects\\libs\\jdk-12.0.2"
+  },
+  "java.configuration.updateBuildConfiguration": "automatic"
+}

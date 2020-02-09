@@ -34,7 +34,7 @@ esplugin {
     name 'opendistro_alerting'
     description 'Amazon OpenDistro alerting plugin'
     classname 'com.amazon.opendistroforelasticsearch.alerting.AlertingPlugin'
-    extendedPlugins = ['lang-painless']
+    extendedPlugins = ['lang-painless', 'x-pack-core']
 }
 
 // Prefer elastic bundled versions for conflicts (primarily with AWS SDK).  We need to specify these manually because
@@ -59,7 +59,10 @@ configurations.all {
 
 dependencies {
     compileOnly "org.elasticsearch.plugin:elasticsearch-scripting-painless-spi:${versions.elasticsearch}"
-
+    compileOnly "org.apache.httpcomponents:httpclient:4.5.8"
+    compileOnly "org.apache.httpcomponents:httpcore:${versions.httpcore}" 
+    compileOnly "commons-logging:commons-logging:${versions.commonslogging}"
+    compileOnly "commons-codec:commons-codec:${versions.commonscodec}"
     // Elasticsearch Nanny state
     compile "org.jetbrains.kotlin:kotlin-stdlib:${kotlin_version}"
     compile "org.jetbrains.kotlin:kotlin-stdlib-common:${kotlin_version}"
@@ -87,7 +90,7 @@ thirdPartyAudit.enabled = false
         setting 'transport.tcp.port', '9300-9400'
         clusterName = 'multi-node-run'
         plugin project.path
-        distribution = "oss-zip"
+        distribution = "zip"
     }
     
     tasks.create(name: "startMultiNode$i") {
@@ -121,10 +124,20 @@ integTestRunner {
 }
 
 integTestCluster {
-    distribution = "oss-zip"
+    distribution = "zip"
+    setting 'xpack.security.enabled', 'true'
+    setting 'xpack.security.http.ssl.enabled', 'false'
+    setting 'path.data', 'E:\\Projects\\elasticsearch\\var\\data'
+    setting 'com.amazon.opendistro.alerting.user', 'elastic'
+    setting 'com.amazon.opendistro.alerting.password', 'password'
 }
 run {
-    distribution = "oss-zip"
+    distribution = "zip"
+    setting 'xpack.security.enabled', 'true'
+    setting 'xpack.security.http.ssl.enabled', 'false'
+    setting 'path.data', 'E:\\Projects\\elasticsearch\\var\\data'
+    setting 'com.amazon.opendistro.alerting.user', 'elastic'
+    setting 'com.amazon.opendistro.alerting.password', 'password'
 }
 
 apply from: '../build-tools/pkgbuild.gradle'
