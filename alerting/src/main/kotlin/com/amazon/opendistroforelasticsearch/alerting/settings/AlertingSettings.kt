@@ -118,5 +118,13 @@ class AlertingSettings {
                 "opendistro.alerting.action_throttle_max_value",
                 TimeValue.timeValueHours(24),
                 Setting.Property.NodeScope, Setting.Property.Dynamic)
+
+        val ALERTING_USERNAME = Setting.simpleString(
+                "opendistro.alerting.user", "",
+                Setting.Property.NodeScope, Setting.Property.Dynamic)
+
+        val ALERTING_PASSWORD = Setting.simpleString(
+                "opendistro.alerting.password", "",
+                Setting.Property.NodeScope, Setting.Property.Dynamic)
     }
 }

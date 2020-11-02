@@ -42,11 +42,7 @@ import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver
 import org.elasticsearch.cluster.node.DiscoveryNodes
 import org.elasticsearch.cluster.service.ClusterService
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry
-import org.elasticsearch.common.settings.ClusterSettings
-import org.elasticsearch.common.settings.IndexScopedSettings
-import org.elasticsearch.common.settings.Setting
-import org.elasticsearch.common.settings.Settings
-import org.elasticsearch.common.settings.SettingsFilter
+import org.elasticsearch.common.settings.*
 import org.elasticsearch.common.xcontent.NamedXContentRegistry
 import org.elasticsearch.env.Environment
 import org.elasticsearch.env.NodeEnvironment
@@ -63,7 +59,11 @@ import org.elasticsearch.script.ScriptContext
 import org.elasticsearch.script.ScriptService
 import org.elasticsearch.threadpool.ThreadPool
 import org.elasticsearch.watcher.ResourceWatcherService
+import java.util.*
 import java.util.function.Supplier
+import org.elasticsearch.xpack.core.security.authc.support.UsernamePasswordToken.BASIC_AUTH_HEADER
+import org.elasticsearch.xpack.core.security.authc.support.UsernamePasswordToken.basicAuthHeaderValue
+
 
 /**
  * Entry point of the OpenDistro for Elasticsearch alerting plugin
@@ -135,10 +135,11 @@ internal class AlertingPlugin : PainlessExtension, ActionPlugin, ScriptPlugin, P
         // Need to figure out how to use the Elasticsearch DI classes rather than handwiring things here.
         val settings = environment.settings()
         alertIndices = AlertIndices(settings, client, threadPool, clusterService)
-        runner = MonitorRunner(settings, client, threadPool, scriptService, xContentRegistry, alertIndices, clusterService)
+        val passwd = SecureString(settings.get("opendistro.alerting.password", "").toCharArray());
+        runner = MonitorRunner(settings, client.filterWithHeader(Collections.singletonMap(BASIC_AUTH_HEADER, basicAuthHeaderValue(settings.get("opendistro.alerting.user", ""), passwd))), threadPool, scriptService, xContentRegistry, alertIndices, clusterService)
         scheduledJobIndices = ScheduledJobIndices(client.admin(), clusterService)
         scheduler = JobScheduler(threadPool, runner)
-        sweeper = JobSweeper(environment.settings(), client, clusterService, threadPool, xContentRegistry, scheduler, ALERTING_JOB_TYPES)
+        sweeper = JobSweeper(environment.settings(), client.filterWithHeader(Collections.singletonMap(BASIC_AUTH_HEADER, basicAuthHeaderValue(settings.get("opendistro.alerting.user", ""), passwd))), clusterService, threadPool, xContentRegistry, scheduler, ALERTING_JOB_TYPES)
         this.threadPool = threadPool
         this.clusterService = clusterService
         return listOf(sweeper, scheduler, runner, scheduledJobIndices)
@@ -166,7 +167,9 @@ internal class AlertingPlugin : PainlessExtension, ActionPlugin, ScriptPlugin, P
                 AlertingSettings.ALERT_HISTORY_RETENTION_PERIOD,
                 AlertingSettings.ALERTING_MAX_MONITORS,
                 AlertingSettings.REQUEST_TIMEOUT,
-                AlertingSettings.MAX_ACTION_THROTTLE_VALUE)
+                AlertingSettings.MAX_ACTION_THROTTLE_VALUE,
+                AlertingSettings.ALERTING_USERNAME,
+                AlertingSettings.ALERTING_PASSWORD)
     }
 
     override fun onIndexModule(indexModule: IndexModule) {
